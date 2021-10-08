@@ -8,17 +8,21 @@ from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 from .objects import QuestSeries
 
+from core.ui import RGridDisplay
+
+
 class QuestManagerPanel(ToolPanel):
     def __init__(self, cabinet):
         super().__init__(QPixmap('assets//image//icon-tree.png'))
-        self.container = QVBoxLayout(self)
+        self.container = QVBoxLayout()
         self.setLayout(self.container)
         self.search_box = SearchBox(self)
         self.search_box.setFixedWidth(700)
         self.container.addWidget(self.search_box)
         self.quest_grid = QuestGrid(self)
         self.container.addWidget(self.quest_grid)
-
+        self.collection_display = RGridDisplay()
+        self.layout().addWidget(self.collection_display)
 
         data = [QuestSeries(), QuestSeries(), QuestSeries(), QuestSeries()]
         self.quest_grid.setup(data)

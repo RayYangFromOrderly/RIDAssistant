@@ -1,6 +1,5 @@
 import os
 import urllib
-import requests
 from .settings import Settings
 
 def touch_api(url, data = None, method='post'):

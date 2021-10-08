@@ -1,5 +1,7 @@
 import sys
 import random
+import sqlite3
+
 from PySide6 import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
@@ -9,6 +11,56 @@ from core.utils import AnimatedProperty, get_screen_size
 from core.ui import RWidget, SearchBox, RLineEdit, RPushButton
 from core.connections import touch_api
 from core.settings import Settings
+
+from quest_manager.ui import QuestManagerPanel
+
+
+
+class MainWindow(RWidget):
+    def __init__(self, assistant):
+        super().__init__()
+        self.assistant = assistant
+        self.resize(QSize(320, 450))
+        self.move(0, 768)
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+
+        self.setStyleSheet(
+        '''
+            QWidget{
+                border:2px solid rgb(0, 212, 183);
+                border-style: inset;
+                font-size: 18pt; font-family: electrolize;
+            }
+        '''
+        )
+        self.setWindowOpacity(0.9)
+        self.hbox = QHBoxLayout()
+        self.setLayout(self.hbox)
+        self.terminal = Terminal()
+        self.hbox.addWidget(self.terminal)
+        # </Label Properties>
+        self.target_size = QSize(1200, 800)
+        from core.utils import get_screen_size, get_point
+        self.start_position = get_point((get_screen_size()) / 2)
+        self.target_position = get_point((get_screen_size() - self.target_size) / 2)
+
+        self.counter = 0
+        from quest_manager.models import Quest
+        from core.db import create_session
+        with create_session() as session:
+            u1 = session.query(Quest).first()
+
+
+
+
+    def setup_ui(self):
+        pass
+
+    def paintEvent(self, pe):
+        painter = QtGui.QPainter(self)
+        self.setWindowOpacity(self.expand_rate.value)
+        painter.drawPixmap(self.rect(), QPixmap("x.png"))
 
 
 class ToolMenu(QWidget):
@@ -84,47 +136,33 @@ class Tab(QPushButton):
 class Terminal(RWidget):
     def __init__(self):
         super().__init__()
-        self.buffer = QLabel()
-        self.buffer.setText('asd\ns')
+        self.label = QLabel()
+        self.label.setText('asd\ns')
         self.vbox = QVBoxLayout()
         self.setLayout(self.vbox)
-        
-        self.vbox.addWidget(self.buffer)
+        self.buffer = ''
+        self.sentence_buffer = ['']
+        self.vbox.addWidget(self.label)
 
-class MainWindow(RWidget):
-    def __init__(self, assistant):
-        super().__init__()
-        self.assistant = assistant
-        self.resize(QSize(320, 450))
-        self.move(0, 768)
-        self.setWindowFlags(Qt.FramelessWindowHint)
-        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.tick)
+        self.timer.start(10)
 
-        self.setStyleSheet(
-        '''
-            QWidget{
-                border:2px solid rgb(0, 212, 183);
-                border-style: inset;
-            }
-        '''
-        )
-        self.setWindowOpacity(0.9)
-        self.hbox = QHBoxLayout()
-        self.setLayout(self.hbox)
-        self.hbox.addWidget(Terminal())
-        # </Label Properties>
-        self.target_size = QSize(1200, 800)
-        from core.utils import get_screen_size, get_point
-        self.start_position = get_point((get_screen_size()) / 2)
-        self.target_position = get_point((get_screen_size() - self.target_size) / 2)
+    def put(self, line):
+        self.buffer += line + '\n'
 
-    def setup_ui(self):
-        pass
+    def tick(self):
+        if self.buffer:
+            if self.buffer[0] == '\n':
+                self.sentence_buffer.append('')
+                if len(self.sentence_buffer) > 10:
+                    self.sentence_buffer = self.sentence_buffer[1:]
+            else:
+                self.sentence_buffer[-1] += self.buffer[0]
+            self.buffer = self.buffer[1:]
 
-    def paintEvent(self, pe):
-        painter = QtGui.QPainter(self)
-        self.setWindowOpacity(self.expand_rate.value)
-        painter.drawPixmap(self.rect(), QPixmap("x.png"))
+        self.label.setText('\n'.join(self.sentence_buffer))
+        self.timer.start(10)
 
 class LoginScreen(RWidget):
     def __init__(self, assistant):

@@ -10,7 +10,7 @@ from PySide6.QtWidgets import *
 class SkillTreePanel(ToolPanel):
     def __init__(self, cabinet):
         super().__init__(QPixmap('assets//image//icon-tree.png'))
-        self.container = QVBoxLayout(self)
+        self.container = QVBoxLayout()
         self.setLayout(self.container)
         self.menu_bar = QWidget()
         self.menu_layout = QHBoxLayout()

@@ -55,3 +55,21 @@ def get_screen_size():
 
 def get_point(size):
     return QPoint(size.width(), size.height())
+
+
+class LoadUnit:
+    def __init__(self):
+        self.max = 1
+        self.current = 0
+        self.loader_tags = {}
+
+        self.direction = random.choice([1, -1])
+        self.style = random.choice(['arc', 'bar_fill', 'dash', 'pane'])
+        self.begin = random.random()
+        self.glow = 0
+        self.glow_count = 0
+        self.glow_direction = 1
+
+    def text(self):
+        rate = self.current / self.max
+        return f'{self.current:.2f} / {self.max:.2f} ({rate:.2f}%)'

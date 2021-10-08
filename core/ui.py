@@ -7,6 +7,23 @@ from PySide6.QtGui import *
 
 from core.utils import get_screen_size
 
+
+class RCollectionDisplay(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setLayout(QGridLayout())
+
+        self.items = []
+
+    def add_item(self, item):
+        self.layout().addWidget(item)
+
+class RGridDisplay(RCollectionDisplay):
+    def __init__(self):
+        super().__init__()
+        self.setLayout(QGridLayout())
+
+
 class RPushButton(QPushButton):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -107,6 +124,7 @@ class SearchBox(RLineEdit):
     def set_selections(self, selections):
         self.model.setStringList(selections)
 
+
 class RWidget(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -125,6 +143,7 @@ class RWidget(QWidget):
         value = self.target_size * rate
         self.resize(value)
         self.move(self.start_position + (self.target_position - self.start_position) * rate)
+
 
 class UnitButton(QPushButton):
     def __init__(self, *args, **kwargs):
@@ -168,6 +187,7 @@ class UnitButton(QPushButton):
         painter.drawPolyline(QPolygon(self.points))
         super().paintEvent(_)
 
+
 class UnitPanel(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -209,3 +229,68 @@ class UnitPanel(QWidget):
         painter.setPen(QPen(gradient, 10))
         painter.drawPolyline(QPolygon(self.points))
         super().paintEvent(_)
+
+
+class NeoLoader(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.resize(500, 500)
+        self.units = []
+
+    def paintEvent(self, pe):
+        
+        painter = QtGui.QPainter(self)
+        painter.setFont(QFont('Consolas', 10))
+        if self.units:
+            from core.utils import get_point
+            for i, unit in enumerate(self.units):
+                direction = unit.direction
+                begin = unit.begin
+                style = unit.style
+
+                size_rate = i / len(self.units)
+                size = QPoint(500, 500)
+                left_top = size * (size_rate) / 2
+                r = 250 * (1-size_rate)
+                import math
+                rate = min(1, unit.current / unit.max)
+                end = begin + rate * direction
+                angle = end * math.pi * 2
+
+                y = -math.sin(angle) * r
+                x = math.cos(angle) * r
+
+                x += 250
+                y += 250
+                size = size * (1-size_rate/2)
+                if style == 'arc':
+                    painter.setPen(QPen(QColor(128, 238, 242, 50), 3))
+                    painter.setBrush(QBrush(QColor(100, 100, 100)))
+
+                elif style == 'bar_fill':
+                    pen = QPen(QColor(128, 238, 242, 90), 20, Qt.DotLine)
+                    painter.setPen(pen)
+
+                elif style == 'pane':
+                    painter.setPen(QPen(QColor(128, 238, 242, 30), 60))
+
+                elif style == 'dash':
+                    pen = QPen(QColor(128, 238, 242, 90), 10, Qt.DashLine)
+                    painter.setPen(pen)
+
+                painter.drawArc(QRect(left_top, size), begin * 16 * 360, rate * 16 * 360 * direction)
+                painter.drawText(QPoint(x, y), unit.text())
+                if rate >= 1:
+                    unit.glow += 0.1 * unit.glow_direction
+                    pen = painter.pen()
+                    pen.setColor(QColor(255, 255, 255, unit.glow * 255))
+                    painter.setPen(pen)
+                    painter.drawArc(QRect(left_top, size), begin * 16 * 360, rate * 16 * 360 * direction)
+                    if unit.glow_direction > 0 and unit.glow >= 1 or (unit.glow_direction < 0 and unit.glow <= 0):
+                        unit.glow_direction *= -1
+                        unit.glow_count += 1
+                        if unit.glow_count == 4:
+                            self.units.remove(unit)
+
+    def load(self, unit):
+        self.units.append(unit)
